@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getMovies, IGetMoviesResult } from "../api";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { makeImagePath } from "../utils";
 
@@ -52,6 +52,12 @@ const Box = styled(motion.div)<{ bgPhoto: string }>`
   font-size: 66px;
   background-image: url(${(props) => props.bgPhoto});
 `;
+const rowVariants = {
+  initial: { x: window.outerWidth + 5 },
+  animate: { x: 0 },
+  exit: { x: -window.outerWidth - 5 },
+};
+
 const offset = 6;
 
 function Home() {
@@ -60,28 +66,51 @@ function Home() {
     getMovies
   );
   const [index, setIndex] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  const toggleLeaving = () => setLeaving((prev) => !prev);
+  const incraseIndex = () => {
+    if (data) {
+      if (leaving) return;
+      toggleLeaving();
+      const totalMovies = data.results.length - 1;
+      const maxIndex = Math.floor(totalMovies / offset) - 1;
+      setIndex((prev) => (prev === maxIndex ? 0 : prev + 1));
+    }
+  };
   return (
     <Wrapper>
       {isLoading ? (
         <Loader>Loading...</Loader>
       ) : (
         <>
-          <Banner bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}>
+          <Banner
+            bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}
+            onClick={incraseIndex}
+          >
             <Title>{data?.results[0].title}</Title>
             <Overview>{data?.results[0].overview}</Overview>
           </Banner>
           <Slider>
-            <Row>
-              {data?.results
-                .slice(1)
-                .slice(offset * index, offset * index + offset)
-                .map((movie) => (
-                  <Box
-                    key={movie.id}
-                    bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
-                  />
-                ))}
-            </Row>
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
+              <Row
+                key={index}
+                variants={rowVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ type: "tween", duration: 1 }}
+              >
+                {data?.results
+                  .slice(1)
+                  .slice(offset * index, offset * index + offset)
+                  .map((movie) => (
+                    <Box
+                      key={movie.id}
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
+                    />
+                  ))}
+              </Row>
+            </AnimatePresence>
           </Slider>
         </>
       )}
