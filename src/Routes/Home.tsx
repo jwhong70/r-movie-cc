@@ -3,6 +3,7 @@ import { getMovies, IGetMoviesResult } from "../api";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { makeImagePath } from "../utils";
 
 const Wrapper = styled.div`
   background: black;
@@ -14,13 +15,15 @@ const Loader = styled.div`
   justify-content: center;
   align-items: center;
 `;
-const Banner = styled.div`
+const Banner = styled.div<{ bgPhoto: string }>`
   height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   padding: 60px;
   background-size: cover;
+  background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)),
+    url(${(props) => props.bgPhoto});
 `;
 const Slider = styled.div`
   position: relative;
@@ -41,12 +44,13 @@ const Row = styled(motion.div)`
   position: absolute;
   width: 100%;
 `;
-const Box = styled(motion.div)`
+const Box = styled(motion.div)<{ bgPhoto: string }>`
   background-color: white;
   background-size: cover;
   background-position: center center;
   height: 200px;
   font-size: 66px;
+  background-image: url(${(props) => props.bgPhoto});
 `;
 const offset = 6;
 
@@ -62,7 +66,7 @@ function Home() {
         <Loader>Loading...</Loader>
       ) : (
         <>
-          <Banner>
+          <Banner bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}>
             <Title>{data?.results[0].title}</Title>
             <Overview>{data?.results[0].overview}</Overview>
           </Banner>
@@ -72,7 +76,10 @@ function Home() {
                 .slice(1)
                 .slice(offset * index, offset * index + offset)
                 .map((movie) => (
-                  <Box key={movie.id} />
+                  <Box
+                    key={movie.id}
+                    bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
+                  />
                 ))}
             </Row>
           </Slider>
